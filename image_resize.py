@@ -1,10 +1,5 @@
 import argparse
 import os
-from exceptions import (
-    InvalidResizeParams,
-    ImageResizeWarning,
-    ResizeParamsLessThanZero
-)
 from PIL import Image
 
 
@@ -59,9 +54,10 @@ def save_resized_image(image_obj, old_image_filename, path_to_result):
     image_obj.save(filepath)
 
 
-def resize_image(input, output, width=None, height=None, scale=None):
-    image_obj = Image.open(input)
-    old_image_filename = os.path.basename(input)
+def resize_image(path_to_image, path_to_result,
+                 width=None, height=None, scale=None):
+    image_obj = Image.open(path_to_image)
+    old_image_filename = os.path.basename(path_to_image)
 
     if width and height:
         resized_image_obj = change_image_height_width(
@@ -77,7 +73,8 @@ def resize_image(input, output, width=None, height=None, scale=None):
         resized_image_obj = None
 
     if resized_image_obj is not None:
-        save_resized_image(resized_image_obj,old_image_filename, output)
+        save_resized_image(resized_image_obj, old_image_filename,
+                           path_to_result)
         return True
 
 
@@ -88,13 +85,15 @@ def get_args():
     size_params_group = parser.add_argument_group('Size params:')
     scale_params_group = parser.add_argument_group('Scale params:')
     parser.add_argument(
-        '-i', '--input',
+        '-t', '--target-image',
         help='Path to image to resize',
+        dest='path_to_image',
         required=True
     )
     parser.add_argument(
-        '-o', '--output',
+        '-o', '--output-path',
         help='Path where to put processed image',
+        dest='path_to_result',
         default='.'
     )
     size_params_group.add_argument(
@@ -116,38 +115,49 @@ def get_args():
 
 
 def check_input_args(args):
+    result_dict = {}
 
     if args.scale and args.height and args.width:
-        raise InvalidResizeParams
+        result_dict['error'] = -1
+        return result_dict
 
     elif (args.scale and args.height) or \
             (args.scale and args.width):
-        raise InvalidResizeParams
+        result_dict['error'] = -2
+        return result_dict
 
     elif args.height and args.width:
-        raise ImageResizeWarning
+        result_dict = vars(args)
+        result_dict['error'] = -3
+        return result_dict
 
     elif args.height is not None and args.height <= 0 or \
             args.width is not None and args.width <= 0 or \
             args.scale is not None and args.scale <= 0:
-        raise ResizeParamsLessThanZero
+        result_dict['error'] = -4
+        return result_dict
 
-    return vars(args)
+    result_dict = vars(args)
+    result_dict['error'] = 0
+    return result_dict
 
 
 if __name__ == '__main__':
     raw_args = get_args()
-    try:
-        cleaned_args = check_input_args(raw_args)
-    except InvalidResizeParams:
+    cleaned_args = check_input_args(raw_args)
+
+    if cleaned_args['error'] == -1:
         exit('You can\'t specify --height and --width params'
              ' alongside with --scale param')
-    except ResizeParamsLessThanZero:
-        exit('Resize and scale params should be greater than zero')
-    except ImageResizeWarning:
+    elif cleaned_args['error'] == -2:
+        exit('You can\'t use alongside --height and --scale'
+             'or --width and --scale params')
+    elif cleaned_args['error'] == -3:
         print('Specifying both --height and --width params'
               ' could damage the resized image proportions')
-        cleaned_args = vars(raw_args)
+    elif cleaned_args['error'] == -4:
+        exit('Resize and scale params should be greater than zero')
+    del cleaned_args['error']
 
     if resize_image(**cleaned_args):
         print('Image resized successfully!')

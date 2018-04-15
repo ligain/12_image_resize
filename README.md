@@ -7,9 +7,9 @@ Before using the tool it has to be installed python version=`3.5` and requiremen
 You can specify both `--height` and `--width` or just `--scale` params to resize image.
 ## Simple run
 ```bash
-$ python3.5 image_resize.py -i path/to/targe-image.jpg -o path/to/resized-image.jpeg --height 480 --width 640
+$ python3.5 image_resize.py -t path/to/targe-image.jpg -o path/to/resized-image.jpeg --height 480 --width 640
 
-$ python3.5 image_resize.py -i path/to/targe-image.jpg -o path/to/resized-image.jpeg --scale 2.5
+$ python3.5 image_resize.py -t path/to/targe-image.jpg -o path/to/resized-image.jpeg --scale 2.5
 ```
 To get more help just type in:
 ```bash
