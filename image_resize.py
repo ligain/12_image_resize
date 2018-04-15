@@ -144,10 +144,11 @@ def check_input_args(args):
 
 def print_check_results(cleaned_args):
     if cleaned_args['error'] == -1:
-        exit('You can\'t specify --height and --width params'
+        print('You can\'t specify --height and --width params'
              ' alongside with --scale param')
+        return
     elif cleaned_args['error'] == -2:
-        print('You can\'t use alongside --height and --scale'
+        print('You can\'t use together --height and --scale '
              'or --width and --scale params')
         return
     elif cleaned_args['error'] == -3:
