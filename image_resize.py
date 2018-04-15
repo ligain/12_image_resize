@@ -142,24 +142,33 @@ def check_input_args(args):
     return result_dict
 
 
-if __name__ == '__main__':
-    raw_args = get_args()
-    cleaned_args = check_input_args(raw_args)
-
+def print_check_results(cleaned_args):
     if cleaned_args['error'] == -1:
         exit('You can\'t specify --height and --width params'
              ' alongside with --scale param')
     elif cleaned_args['error'] == -2:
-        exit('You can\'t use alongside --height and --scale'
+        print('You can\'t use alongside --height and --scale'
              'or --width and --scale params')
+        return
     elif cleaned_args['error'] == -3:
         print('Specifying both --height and --width params'
               ' could damage the resized image proportions')
     elif cleaned_args['error'] == -4:
-        exit('Resize and scale params should be greater than zero')
+        print('Resize and scale params should be greater than zero')
+        return
     del cleaned_args['error']
+    return cleaned_args
 
-    if resize_image(**cleaned_args):
+
+if __name__ == '__main__':
+    raw_args = get_args()
+    cleaned_args = check_input_args(raw_args)
+    args = print_check_results(cleaned_args)
+
+    if args is None:
+        exit()
+
+    if resize_image(**args):
         print('Image resized successfully!')
     else:
         print('An error has occured while resizing image')
