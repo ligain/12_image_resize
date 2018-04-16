@@ -3,37 +3,6 @@ import os
 from PIL import Image
 
 
-def change_image_height_width(image_obj, height, width):
-    return image_obj.resize((width, height))
-
-
-def change_image_scale(image_obj, scale):
-    orig_image_size = image_obj.size
-    new_image_size = tuple(
-        int(size_param * scale) for size_param in orig_image_size
-    )
-    scaled_image = image_obj.resize(new_image_size)
-    return scaled_image
-
-
-def change_image_height(image_obj, height):
-    new_image_width = int(
-        (height * image_obj.width) // image_obj.height
-    )
-    return image_obj.resize(
-        (new_image_width, height)
-    )
-
-
-def change_image_width(image_obj, width):
-    new_image_height = int(
-        (width * image_obj.height) // image_obj.width
-    )
-    return image_obj.resize(
-        (width, new_image_height)
-    )
-
-
 def get_new_image_filename(old_filename, image_width, image_height):
     old_filename, old_extension = os.path.splitext(old_filename)
     return '{filename}__{width}x{height}{extension}'.format(
@@ -54,28 +23,44 @@ def save_resized_image(image_obj, old_image_filename, path_to_result):
     image_obj.save(filepath)
 
 
-def resize_image(path_to_image, path_to_result,
-                 width=None, height=None, scale=None):
+def open_image(path_to_image):
     image_obj = Image.open(path_to_image)
-    old_image_filename = os.path.basename(path_to_image)
+    return image_obj
+
+
+def calc_new_image_size(orig_width, orig_height,
+                        width=None, height=None, scale=None):
+    """
+    Calculates new image size and returns tuple (width, height)
+    """
 
     if width and height:
-        resized_image_obj = change_image_height_width(
-            image_obj, height, width
-        )
+        size = (width, height)
     elif scale:
-        resized_image_obj = change_image_scale(image_obj, scale)
+        size = (
+            int(orig_width * scale),
+            int(orig_height * scale)
+        )
     elif width:
-        resized_image_obj = change_image_width(image_obj, width)
+        size = (
+            width,
+            int((width * orig_height) // orig_width)
+        )
     elif height:
-        resized_image_obj = change_image_height(image_obj, height)
+        size = (
+            int((height * orig_width) // orig_height),
+            height
+        )
     else:
-        resized_image_obj = None
+        size = (orig_width, orig_height)
 
-    if resized_image_obj is not None:
-        save_resized_image(resized_image_obj, old_image_filename,
-                           path_to_result)
-        return True
+    return size
+
+
+def resize_image(image_obj, width, height):
+    new_image_size = calc_new_image_size(width, height)
+    resized_image_obj = image_obj.resize(new_image_size)
+    return resized_image_obj
 
 
 def get_args():
@@ -99,77 +84,57 @@ def get_args():
     size_params_group.add_argument(
         '--width',
         help='Width of target image in pixels',
-        type=int
+        type=int,
+        default=0
     )
     size_params_group.add_argument(
         '--height',
         help='Height of target image in pixels',
-        type=int
+        type=int,
+        default=0
     )
     scale_params_group.add_argument(
         '--scale',
         help='Output scale of resized image',
-        type=float
+        type=float,
+        default=0.0
     )
-    return parser.parse_args()
 
+    args = parser.parse_args()
 
-def check_input_args(args):
-    result_dict = {}
-
-    if args.scale and args.height and args.width:
-        result_dict['error'] = -1
-        return result_dict
-
-    elif (args.scale and args.height) or \
-            (args.scale and args.width):
-        result_dict['error'] = -2
-        return result_dict
-
+    if not os.path.isfile(
+            os.path.expanduser(args.path_to_image)):
+        parser.error('Invalid path to target image')
+    if not os.path.exists(
+            os.path.expanduser(args.path_to_result)):
+        parser.error('Invalid output path')
+    elif args.scale and args.height and args.width:
+        parser.error("You can't specify --height and --width "
+                     "params alongside with --scale param")
+    elif (args.scale and args.height) or (args.scale and args.width):
+        parser.error("You can't use together --height and "
+                     "--scale or --width and --scale params")
     elif args.height and args.width:
-        result_dict = vars(args)
-        result_dict['error'] = -3
-        return result_dict
+        print('Specifying both --height and --width params could '
+              'damage the resized image proportions')
+    elif any([args.height < 0, args.width < 0, args.scale < 0]):
+        parser.error('Resize and scale params should be greater than zero')
 
-    elif args.height is not None and args.height <= 0 or \
-            args.width is not None and args.width <= 0 or \
-            args.scale is not None and args.scale <= 0:
-        result_dict['error'] = -4
-        return result_dict
-
-    result_dict = vars(args)
-    result_dict['error'] = 0
-    return result_dict
-
-
-def print_check_results(cleaned_args):
-    if cleaned_args['error'] == -1:
-        print('You can\'t specify --height and --width params'
-             ' alongside with --scale param')
-        return
-    elif cleaned_args['error'] == -2:
-        print('You can\'t use together --height and --scale '
-             'or --width and --scale params')
-        return
-    elif cleaned_args['error'] == -3:
-        print('Specifying both --height and --width params'
-              ' could damage the resized image proportions')
-    elif cleaned_args['error'] == -4:
-        print('Resize and scale params should be greater than zero')
-        return
-    del cleaned_args['error']
-    return cleaned_args
+    return args
 
 
 if __name__ == '__main__':
-    raw_args = get_args()
-    cleaned_args = check_input_args(raw_args)
-    args = print_check_results(cleaned_args)
+    args = get_args()
 
-    if args is None:
-        exit()
-
-    if resize_image(**args):
-        print('Image resized successfully!')
-    else:
-        print('An error has occured while resizing image')
+    image = open_image(args.path_to_image)
+    new_image_size = calc_new_image_size(
+        image.width,
+        image.height,
+        width=args.width,
+        height=args.height,
+        scale=args.scale
+    )
+    resized_image = resize_image(image, *new_image_size)
+    old_image_filename = os.path.basename(image.filename)
+    save_resized_image(resized_image, old_image_filename, args.path_to_result)
+    print('Image resized successfully!')
