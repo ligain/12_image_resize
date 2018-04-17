@@ -66,12 +66,10 @@ def resize_image(image_obj, width, height):
 def validate_args(parser):
     args = parser.parse_args()
 
-    if not os.path.isfile(
-            os.path.expanduser(args.path_to_image)):
+    if not os.path.isfile(os.path.expanduser(args.path_to_image)):
         parser.error('Invalid path to target image')
 
-    if not os.path.exists(
-            os.path.expanduser(args.path_to_result)):
+    if not os.path.exists(os.path.expanduser(args.path_to_result)):
         parser.error('Invalid output path')
 
     if args.scale and args.height and args.width:
@@ -85,9 +83,6 @@ def validate_args(parser):
     if args.height and args.width:
         print('Specifying both --height and --width params could '
               'damage the resized image proportions')
-
-    if any([args.height < 0, args.width < 0, args.scale < 0]):
-        parser.error('Resize and scale params should be greater than zero')
 
     return args
 
