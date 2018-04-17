@@ -46,10 +46,26 @@ def calc_new_image_size(orig_width, orig_height,
             int((height * orig_width) // orig_height),
             height
         )
-    else:
-        raise ValueError('Invalid size params')
 
     return size
+
+
+def validate_size_value(value):
+    size_value = int(value)
+    if size_value <= 0:
+        raise argparse.ArgumentTypeError(
+            'Resize params should be greater than zero with type: integer'
+        )
+    return size_value
+
+
+def validate_scale_value(value):
+    scale_value = float(value)
+    if scale_value <= 0.0:
+        raise argparse.ArgumentTypeError(
+            'Scale param should be greater than zero with type: float'
+        )
+    return scale_value
 
 
 def validate_args(parser):
@@ -65,7 +81,7 @@ def validate_args(parser):
         parser.error("You can't specify --height and --width "
                      "params alongside with --scale param")
 
-    if (args.scale and args.height) or (args.scale and args.width):
+    if args.scale and (args.height or args.width):
         parser.error("You can't use together --height and "
                      "--scale or --width and --scale params")
 
@@ -97,19 +113,19 @@ def get_args():
     size_params_group.add_argument(
         '--width',
         help='Width of target image in pixels',
-        type=int,
+        type=validate_size_value,
         default=0
     )
     size_params_group.add_argument(
         '--height',
         help='Height of target image in pixels',
-        type=int,
+        type=validate_size_value,
         default=0
     )
     scale_params_group.add_argument(
         '--scale',
         help='Output scale of resized image',
-        type=float,
+        type=validate_scale_value,
         default=0.0
     )
 
