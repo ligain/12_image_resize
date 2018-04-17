@@ -50,8 +50,8 @@ def calc_new_image_size(orig_width, orig_height,
     return size
 
 
-def validate_size_value(value):
-    size_value = int(value)
+def validate_size_value(size):
+    size_value = int(size)
     if size_value <= 0:
         raise argparse.ArgumentTypeError(
             'Resize params should be greater than zero with type: integer'
@@ -59,8 +59,8 @@ def validate_size_value(value):
     return size_value
 
 
-def validate_scale_value(value):
-    scale_value = float(value)
+def validate_scale_value(scale):
+    scale_value = float(scale)
     if scale_value <= 0.0:
         raise argparse.ArgumentTypeError(
             'Scale param should be greater than zero with type: float'
