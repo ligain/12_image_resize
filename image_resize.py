@@ -69,19 +69,24 @@ def validate_args(parser):
     if not os.path.isfile(
             os.path.expanduser(args.path_to_image)):
         parser.error('Invalid path to target image')
+
     if not os.path.exists(
             os.path.expanduser(args.path_to_result)):
         parser.error('Invalid output path')
-    elif args.scale and args.height and args.width:
+
+    if args.scale and args.height and args.width:
         parser.error("You can't specify --height and --width "
                      "params alongside with --scale param")
-    elif (args.scale and args.height) or (args.scale and args.width):
+
+    if (args.scale and args.height) or (args.scale and args.width):
         parser.error("You can't use together --height and "
                      "--scale or --width and --scale params")
-    elif args.height and args.width:
+
+    if args.height and args.width:
         print('Specifying both --height and --width params could '
               'damage the resized image proportions')
-    elif any([args.height < 0, args.width < 0, args.scale < 0]):
+
+    if any([args.height < 0, args.width < 0, args.scale < 0]):
         parser.error('Resize and scale params should be greater than zero')
 
     return args
